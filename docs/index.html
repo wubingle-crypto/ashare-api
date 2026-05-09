@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A-Share Stock Data API · 免费A股行情数据接口</title>
+    <meta name="description" content="Free real-time and historical A-share stock market data API. Built for quants, traders, and developers. / 免费、实时的A股市场数据API，专为量化交易者和开发者打造。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0b;
+            --bg-secondary: #121214;
+            --bg-card: #18181b;
+            --bg-card-hover: #1f1f23;
+            --bg-elevated: #202024;
+            --border: #27272a;
+            --border-active: #3f3f46;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-tertiary: #71717a;
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --accent-glow: rgba(99, 102, 241, 0.15);
+            --green: #22c55e;
+            --red: #ef4444;
+            --amber: #f59e0b;
+            --blue: #3b82f6;
+            --cyan: #06b6d4;
+            --code-bg: #0d0d0f;
+            --gradient-start: #6366f1;
+            --gradient-end: #8b5cf6;
+            --radius: 10px;
+            --radius-sm: 6px;
+            --radius-lg: 14px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ─── Scrollbar ─── */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
+
+        /* ─── Layout ─── */
+        .wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ─── Sidebar ─── */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            padding: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 24px 24px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .sidebar-logo .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .sidebar-version {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+            margin-left: 42px;
+        }
+
+        .sidebar-nav {
+            padding: 16px 12px;
+            flex: 1;
+        }
+
+        .nav-section {
+            margin-bottom: 8px;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-tertiary);
+            padding: 8px 12px 6px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.15s ease;
+        }
+
+        .nav-link:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .nav-link.active {
+            background: var(--accent-glow);
+            color: var(--accent-hover);
+        }
+
+        .nav-link .nav-icon {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-footer {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .sidebar-footer .donate-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.08));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: var(--radius-sm);
+            color: var(--accent-hover);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-footer .donate-link:hover {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.15));
+            border-color: rgba(99, 102, 241, 0.4);
+            transform: translateY(-1px);
+        }
+
+        /* ─── Main Content ─── */
+        .main {
+            flex: 1;
+            margin-left: 280px;
+            max-width: 100%;
+        }
+
+        /* ─── Hero ─── */
+        .hero {
+            padding: 80px 64px 60px;
+            background: linear-gradient(180deg, rgba(99, 102, 241, 0.06) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero h1 {
+            font-size: 44px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero .en-title {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--text-tertiary);
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 16px;
+            color: var(--text-secondary);
+            max-width: 680px;
+            line-height: 1.7;
+        }
+
+        .hero .tags {
+            display: flex;
+            gap: 8px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .tag.accent {
+            background: var(--accent-glow);
+            border-color: rgba(99, 102, 241, 0.3);
+            color: var(--accent-hover);
+        }
+
+        /* ─── Content Area ─── */
+        .content {
+            padding: 48px 64px 96px;
+            max-width: 960px;
+        }
+
+        .content section {
+            margin-bottom: 56px;
+            scroll-margin-top: 24px;
+        }
+
+        .content section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-header {
+            margin-bottom: 24px;
+        }
+
+        .section-header h2 {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 6px;
+        }
+
+        .section-header .en-sub {
+            font-size: 14px;
+            color: var(--text-tertiary);
+            font-weight: 400;
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 15px;
+            margin-top: 8px;
+        }
+
+        /* ─── Endpoint Cards ─── */
+        .endpoint-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: border-color 0.2s ease;
+        }
+
+        .endpoint-card:hover {
+            border-color: var(--border-active);
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .method-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+
+        .method-badge.get {
+            background: rgba(34, 197, 94, 0.12);
+            color: var(--green);
+        }
+
+        .method-badge.post {
+            background: rgba(59, 130, 246, 0.12);
+            color: var(--blue);
+        }
+
+        .endpoint-path {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            flex: 1;
+            min-width: 0;
+            word-break: break-all;
+        }
+
+        .endpoint-desc-cn {
+            font-size: 13px;
+            color: var(--text-secondary);
+            width: 100%;
+            margin-top: 2px;
+        }
+
+        .endpoint-body {
+            padding: 20px;
+        }
+
+        .endpoint-body .desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            line-height: 1.7;
+        }
+
+        .endpoint-body .desc .en {
+            color: var(--text-tertiary);
+            font-size: 13px;
+        }
+
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+
+        .param-table th {
+            text-align: left;
+            padding: 8px 12px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .param-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .param-table .param-name {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .param-table .param-required {
+            color: var(--red);
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .param-table .param-optional {
+            color: var(--text-tertiary);
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .param-table .param-type {
+            color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+        }
+
+        .param-table .param-desc {
+            color: var(--text-secondary);
+        }
+
+        /* ─── Code Blocks ─── */
+        .code-block {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .code-block .code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            background: var(--bg-elevated);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .code-block .code-header .label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .code-block .code-header .copy-btn {
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            font-size: 12px;
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 4px;
+            transition: all 0.15s ease;
+        }
+
+        .code-block .code-header .copy-btn:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .code-block pre {
+            padding: 16px;
+            margin: 0;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--text-secondary);
+        }
+
+        .code-block pre .keyword { color: #c678dd; }
+        .code-block pre .string { color: #98c379; }
+        .code-block pre .number { color: #d19a66; }
+        .code-block pre .comment { color: #5c6370; font-style: italic; }
+        .code-block pre .function { color: #61afef; }
+        .code-block pre .property { color: #e06c75; }
+        .code-block pre .punctuation { color: #abb2bf; }
+        .code-block pre .operator { color: #56b6c2; }
+        .code-block pre .builtin { color: #e5c07b; }
+
+        /* ─── Example Tabs ─── */
+        .example-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 0;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-elevated);
+        }
+
+        .example-tab {
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            border: none;
+            background: none;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s ease;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .example-tab:hover {
+            color: var(--text-secondary);
+        }
+
+        .example-tab.active {
+            color: var(--accent-hover);
+            border-bottom-color: var(--accent);
+        }
+
+        .example-content {
+            display: none;
+        }
+
+        .example-content.active {
+            display: block;
+        }
+
+        /* ─── Response Preview ─── */
+        .response-preview {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .response-preview .resp-header {
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-elevated);
+        }
+
+        .response-preview .resp-header .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+
+        .response-preview .resp-header .resp-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .response-preview .resp-header .resp-status {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--green);
+        }
+
+        .response-preview pre {
+            padding: 16px;
+            margin: 0;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--text-secondary);
+        }
+
+        /* ─── Donation Section ─── */
+        .donation-box {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.05));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            text-align: center;
+        }
+
+        .donation-box h3 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .donation-box .en-sub {
+            font-size: 14px;
+            color: var(--text-tertiary);
+            margin-bottom: 20px;
+        }
+
+        .donation-box .donation-address {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: all;
+        }
+
+        .donation-box .donation-address:hover {
+            border-color: var(--accent);
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        .donation-box .donation-address .network-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            background: rgba(99, 102, 241, 0.15);
+            border-radius: 4px;
+            color: var(--accent-hover);
+            letter-spacing: 0.03em;
+        }
+
+        .donation-box .donation-note {
+            margin-top: 16px;
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        .donation-box .donation-qr {
+            margin-top: 20px;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .donation-box .donation-qr .qr-placeholder {
+            width: 120px;
+            height: 120px;
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-tertiary);
+            font-size: 12px;
+        }
+
+        /* ─── Quick Start Example ─── */
+        .quick-start {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .quick-start {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .quick-start-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            transition: border-color 0.2s ease;
+        }
+
+        .quick-start-card:hover {
+            border-color: var(--border-active);
+        }
+
+        .quick-start-card h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quick-start-card h4 .icon {
+            font-size: 18px;
+        }
+
+        .quick-start-card pre {
+            background: var(--code-bg);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            overflow-x: auto;
+        }
+
+        /* ─── Footer ─── */
+        .footer {
+            padding: 32px 64px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            max-width: 960px;
+        }
+
+        .footer .copyright {
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        .footer .links {
+            display: flex;
+            gap: 16px;
+        }
+
+        .footer .links a {
+            color: var(--text-tertiary);
+            text-decoration: none;
+            font-size: 13px;
+            transition: color 0.15s ease;
+        }
+
+        .footer .links a:hover {
+            color: var(--text-secondary);
+        }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 1024px) {
+            .sidebar {
+                display: none;
+            }
+            .main {
+                margin-left: 0;
+            }
+            .hero {
+                padding: 48px 24px 40px;
+            }
+            .content {
+                padding: 32px 24px 64px;
+            }
+            .hero h1 {
+                font-size: 32px;
+            }
+            .footer {
+                padding: 24px;
+            }
+        }
+
+        /* ─── Mobile Nav Toggle ─── */
+        .mobile-nav-toggle {
+            display: none;
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 200;
+            width: 40px;
+            height: 40px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 20px;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (max-width: 1024px) {
+            .mobile-nav-toggle {
+                display: flex;
+            }
+            .sidebar.open {
+                display: flex;
+                position: fixed;
+                z-index: 150;
+                width: 100%;
+                max-width: 320px;
+            }
+        }
+
+        /* ─── TOC on sidebar ─── */
+        .nav-link.sub {
+            padding-left: 36px;
+            font-size: 13px;
+        }
+
+        /* ─── Utility ─── */
+        .mt-4 { margin-top: 16px; }
+        .mb-4 { margin-bottom: 16px; }
+        .gap-2 { gap: 8px; }
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+
+        /* ─── Smooth loading ─── */
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="#" class="sidebar-logo">
+                <span class="logo-icon">A</span>
+                ashare-api
+            </a>
+            <div class="sidebar-version">v1.0.0 · A-Share Stock Data API</div>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Getting Started</div>
+                <a href="#intro" class="nav-link active">
+                    <span class="nav-icon">📘</span> 简介 / Introduction
+                </a>
+                <a href="#quickstart" class="nav-link">
+                    <span class="nav-icon">⚡</span> 快速开始 / Quick Start
+                </a>
+                <a href="#base-url" class="nav-link">
+                    <span class="nav-icon">🌐</span> 基础URL / Base URL
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Endpoints</div>
+                <a href="#quote" class="nav-link">
+                    <span class="nav-icon">📊</span> GET /quote/{code}
+                </a>
+                <a href="#history" class="nav-link">
+                    <span class="nav-icon">📈</span> GET /history/{code}
+                </a>
+                <a href="#batch" class="nav-link">
+                    <span class="nav-icon">📦</span> POST /batch
+                </a>
+                <a href="#market" class="nav-link">
+                    <span class="nav-icon">🏛️</span> GET /market
+                </a>
+                <a href="#search" class="nav-link">
+                    <span class="nav-icon">🔍</span> GET /search
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">More</div>
+                <a href="#response-format" class="nav-link">
+                    <span class="nav-icon">📋</span> 响应格式 / Response
+                </a>
+                <a href="#errors" class="nav-link">
+                    <span class="nav-icon">⚠️</span> 错误处理 / Errors
+                </a>
+                <a href="#usage-examples" class="nav-link">
+                    <span class="nav-icon">💻</span> 使用示例 / Examples
+                </a>
+                <a href="#donation" class="nav-link">
+                    <span class="nav-icon">❤️</span> 打赏支持 / Donate
+                </a>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <a href="#donation" class="donate-link">
+                ❤️ 打赏支持 / Support
+            </a>
+        </div>
+    </nav>
+
+    <!-- Mobile Nav Toggle -->
+    <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle navigation">☰</button>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Hero -->
+        <section class="hero fade-in">
+            <h1>A-Share Stock Data API</h1>
+            <div class="en-title">Free Real-time &amp; Historical A-Share Stock Market API</div>
+            <p>
+                免费、实时、无需注册的 A 股市场数据 API。为量化交易者、开发者和金融研究人员打造。<br>
+                <span class="en">A free, real-time, no-registration-required API for Chinese A-share stock data. Built for quants, developers, and financial researchers.</span>
+            </p>
+            <div class="tags">
+                <span class="tag accent">⚡ Real-time</span>
+                <span class="tag">🐍 Python + FastAPI</span>
+                <span class="tag">🎯 A-Share / A股</span>
+                <span class="tag">📦 No Auth Required</span>
+                <span class="tag">🌐 Open Source</span>
+            </div>
+        </section>
+
+        <!-- Content -->
+        <div class="content">
+
+            <!-- 1. Introduction -->
+            <section id="intro">
+                <div class="section-header">
+                    <h2>📘 简介 <span class="en-sub">· Introduction</span></h2>
+                    <p>
+                        A-Share Stock Data API 提供中国A股市场的实时行情和历史数据，覆盖全部沪深京上市公司。
+                        数据来源于腾讯财经和东方财富，无需注册或 API Key，开箱即用。
+                        <br>
+                        <span class="en">The A-Share Stock Data API provides real-time quotes and historical data for the Chinese A-share market, covering all Shanghai, Shenzhen, and Beijing listed companies. Data sourced from Tencent Finance and East Money (东方财富). No registration or API Key required.</span>
+                    </p>
+                </div>
+                <div class="quick-start">
+                    <div class="quick-start-card">
+                        <h4><span class="icon">🚀</span> 一键部署 / One-Click Deploy</h4>
+                        <pre>git clone https://github.com/wubingle-crypto/ashare-api
+cd ashare-api
+pip install -r requirements.txt
+python main.py</pre>
+                    </div>
+                    <div class="quick-start-card">
+                        <h4><span class="icon">🆓</span> 完全免费 / Completely Free</h4>
+                        <pre># 无需注册 / No sign-up
+# 无需API Key / No API key
+# 开源 / Open Source (MIT)
+# 运行在 Cloudflare Workers 或自托管</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. Quick Start -->
+            <section id="quickstart">
+                <div class="section-header">
+                    <h2>⚡ 快速开始 <span class="en-sub">· Quick Start</span></h2>
+                    <p>最简单的调用方式 — 只需一个 cURL 命令即可获取实时行情数据。</p>
+                </div>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="label">cURL</span>
+                    </div>
+                    <pre><span class="comment"># 获取贵州茅台实时行情 · Get real-time quote for 贵州茅台 (Kweichow Moutai)</span>
+curl https://ashare.binglewu.workers.dev/quote/600519
+
+<span class="comment"># 查询历史数据 · Query historical data</span>
+curl "https://ashare.binglewu.workers.dev/history/600519?start=20250101&end=20250401"</pre>
+                </div>
+            </section>
+
+            <!-- 3. Base URL -->
+            <section id="base-url">
+                <div class="section-header">
+                    <h2>🌐 基础 URL <span class="en-sub">· Base URL</span></h2>
+                </div>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="label">Base URL</span>
+                    </div>
+                    <pre><span class="string">https://ashare.binglewu.workers.dev</span></pre>
+                </div>
+                <p style="color: var(--text-secondary); font-size: 14px; margin-top: 8px;">
+                    所有请求均需使用此基础 URL。如自托管，请替换为您的域名和端口（默认 <code>:7800</code>）。
+                    <br>
+                    <span class="en">All requests use this base URL. For self-hosted instances, replace with your own domain and port (default <code>:7800</code>).</span>
+                </p>
+            </section>
+
+            <!-- 4. Endpoints -->
+            <section id="endpoints">
+                <div class="section-header">
+                    <h2>📡 接口列表 <span class="en-sub">· Endpoints</span></h2>
+                    <p>所有端点一览。每个端点均返回 JSON 格式数据，并包含打赏信息响应头。</p>
+                </div>
+
+                <!-- GET /quote/{code} -->
+                <div class="endpoint-card" id="quote">
+                    <div class="endpoint-header">
+                        <span class="method-badge get">GET</span>
+                        <span class="endpoint-path">/quote/{code}</span>
+                        <span class="endpoint-desc-cn">实时行情 · <span class="en">Real-time Stock Quote</span></span>
+                    </div>
+                    <div class="endpoint-body">
+                        <div class="desc">
+                            获取单只股票的实时行情数据，包括最新价、涨跌幅、成交量、换手率等。
+                            <br>
+                            <span class="en">Get real-time quote data for a single stock, including latest price, change, volume, turnover rate, etc.</span>
+                        </div>
+                        <table class="param-table">
+                            <thead>
+                                <tr>
+                                    <th>参数</th>
+                                    <th>类型</th>
+                                    <th>必填</th>
+                                    <th>说明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="param-name">code</td>
+                                    <td class="param-type">string</td>
+                                    <td><span class="param-required">Required</span></td>
+                                    <td class="param-desc">股票代码，如 <code>600519</code>（贵州茅台）、<code>000001</code>（平安银行）、<code>300750</code>（宁德时代）。支持 <code>sh</code>/<code>sz</code> 前缀（如 <code>sh600519</code>）</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="label">Example · 示例</span>
+                            </div>
+                            <pre>curl https://ashare.binglewu.workers.dev/quote/600519</pre>
+                        </div>
+                        <div class="response-preview">
+                            <div class="resp-header">
+                                <span class="status-dot"></span>
+                                <span class="resp-label">Response</span>
+                                <span class="resp-status">200 OK</span>
+                            </div>
+                            <pre>{
+    <span class="property">"status"</span>: <span class="string">"ok"</span>,
+    <span class="property">"data"</span>: {
+        <span class="property">"code"</span>: <span class="string">"600519"</span>,
+        <span class="property">"name"</span>: <span class="string">"贵州茅台"</span>,
+        <span class="property">"market"</span>: <span class="string">"0"</span>,
+        <span class="property">"price"</span>: <span class="number">1372.99</span>,
+        <span class="property">"prev_close"</span>: <span class="number">1371.0</span>,
+        <span class="property">"open"</span>: <span class="number">1375.0</span>,
+        <span class="property">"high"</span>: <span class="number">1380.0</span>,
+        <span class="property">"low"</span>: <span class="number">1368.0</span>,
+        <span class="property">"volume"</span>: <span class="number">2845671</span>,
+        <span class="property">"amount"</span>: <span class="number">3912345678.0</span>,
+        <span class="property">"change"</span>: <span class="number">1.99</span>,
+        <span class="property">"change_pct"</span>: <span class="number">0.00145</span>,
+        <span class="property">"turnover_pct"</span>: <span class="number">0.0023</span>,
+        <span class="property">"datetime"</span>: <span class="string">"2025/04/18 15:00:00"</span>
+    },
+    <span class="property">"donation"</span>: {
+        <span class="property">"address"</span>: <span class="string">"0x19979a2498867a1bC0F823Fd309B05eEe8Bc5624"</span>,
+        <span class="property">"network"</span>: <span class="string">"BSC (BEP-20)"</span>
+    }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GET /history/{code} -->
+                <div class="endpoint-card" id="history">
+                    <div class="endpoint-header">
+                        <span class="method-badge get">GET</span>
+                        <span class="endpoint-path">/history/{code}</span>
+                        <span class="endpoint-desc-cn">历史数据 · <span class="en">Historical Daily Data</span></span>
+                    </div>
+                    <div class="endpoint-body">
+                        <div class="desc">
+                            获取股票的历史日K线数据。支持前复权（qfq）和后复权（hfq）调整。
+                            <br>
+                            <span class="en">Get historical daily OHLC data. Supports forward (qfq) and backward (hfq) price adjustment.</span>
+                        </div>
+                        <table class="param-table">
+                            <thead>
+                                <tr>
+                                    <th>参数</th>
+                                    <th>类型</th>
+                                    <th>必填</th>
+                                    <th>说明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="param-name">code</td>
+                                    <td class="param-type">string</td>
+                                    <td><span class="param-required">Required</span></td>
+                                    <td class="param-desc">股票代码（路径参数）</td>
+                                </tr>
+                                <tr>
+                                    <td class="param-name">start</td>
+                                    <td class="param-type">string</td>
+                                    <td><span class="param-optional">Optional</span></td>
+                                    <td class="param-desc">开始日期，格式 <code>YYYYMMDD</code>。默认一年前</td>
+                                </tr>
+                                <tr>
+                                    <td class="param-name">end</td>
+                                    <td class="param-type">string</td>
+                                    <td><span class="param-optional">Optional</span></td>
+                                    <td class="param-desc">结束日期，格式 <code>YYYYMMDD</code>。默认今天</td>
+                                </tr>
+                                <tr>
+                                    <td class="param-name">adjust</td>
+                                    <td class="param-type">string</td>
+                                    <td><span class="param-optional">Optional</span></td>
+                                    <td class="param-desc">复权类型：空字符串（不复权）、<code>qfq</code>（前复权）、<code>hfq</code>（后复权）</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="label">Example · 示例</span>
+                            </div>
+                            <pre>curl "https://ashare.binglewu.workers.dev/history/000001?start=20250101&end=20250401&adjust=qfq"</pre>
+                        </div>
+                        <div class="response-preview">
+                            <div class="resp-header">
+                                <span class="status-dot"></span>
+                                <span class="resp-label">Response</span>
+                                <span class="resp-status">200 OK</span>
+                            </div>
+                            <pre>{
+    <span class="property">"status"</span>: <span class="string">"ok"</span>,
+    <span class="property">"count"</span>: <span class="number">60</span>,
+    <span class="property">"data"</span>: [
+        {
+            <span class="property">"日期"</span>: <span class="string">"2025-01-02"</span>,
+            <span class="property">"开盘"</span>: <span class="number">11.62</span>,
+            <span class="property">"收盘"</span>: <span class="number">11.55</span>,
+            <span class="property">"最高"</span>: <span class="number">11.66</span>,
+            <span class="property">"最低"</span>: <span class="number">11.50</span>,
+            <span class="property">"成交量</span>": <span class="number">54287126</span>,
+            <span class="property">"成交额</span>": <span class="number">628914528.0</span>,
+            <span class="property">"振幅"</span>: <span class="number">0.014</span>,
+            <span class="property">"涨跌幅"</span>: <span class="number">-0.006</span>,
+            <span class="property">"涨跌额"</span>: <span class="number">-0.07</span>,
+            <span class="property">"换手率"</span>: <span class="number">0.0028</span>
+        }
+        <span class="comment">// ... more records</span>
+    ],
+    <span class="property">"donation"</span>: { <span class="comment">/* ... */</span> }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- POST /batch -->
+                <div class="endpoint-card" id="batch">
+                    <div class="endpoint-header">
+                        <span class="method-badge post">POST</span>
+                        <span class="endpoint-path">/batch</span>
+                        <span class="endpoint-desc-cn">批量查询 · <span class="en">Batch Quote Query</span></span>
+                    </div>
+                    <div class="endpoint-body">
+                        <div class="desc">
+                            一次请求查询多只股票的实时行情。支持通过 JSON body 或 URL 查询参数传入。<br>
+                            <span class="en">Query multiple stock quotes in a single request. Supports JSON body or query parameters.</span>
+                        </div>
+                        <table class="param-table">
+                            <thead>
+                                <tr>
+                                    <th>参数</th>
+                                    <th>类型</th>
+                                    <th>必填</th>
+                                    <th>说明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="param-name">codes</td>
+                                    <td class="param-type">string[]</td>
+                                    <td><span class="param-required">Required</span></td>
+                                    <td class="param-desc">股票代码数组。可在 JSON body 或 query params 中提供</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="label">Example · 示例 (JSON Body)</span>
+                            </div>
+                            <pre>curl -X POST https://ashare.binglewu.workers.dev/batch \
+  -H "Content-Type: application/json" \
+  -d '{"codes": ["600519", "000001", "300750", "002415"]}'</pre>
+                        </div>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="label">Example · 示例 (Query Params)</span>
+                            </div>
+                            <pre>curl "https://ashare.binglewu.workers.dev/batch?codes=600519&codes=000001&codes=300750"</pre>
+                        </div>
+                        <div class="response-preview">
+                            <div class="resp-header">
+                                <span class="status-dot"></span>
+                                <span class="resp-label">Response</span>
+                                <span class="resp-status">200 OK</span>
+                            </div>
+                            <pre>{
+    <span class="property">"status"</span>: <span class="string">"ok"</span>,
+    <span class="property">"data"</span>: {
+        <span class="property">"600519"</span>: {
+            <span class="property">"code"</span>: <span class="string">"600519"</span>,
+            <span class="property">"name"</span>: <span class="string">"贵州茅台"</span>,
+            <span class="property">"price"</span>: <span class="number">1372.99</span>,
+            <span class="property">"change_pct"</span>: <span class="number">0.00145</span>
+        },
+        <span class="property">"000001"</span>: {
+            <span class="property">"code"</span>: <span class="string">"000001"</span>,
+            <span class="property">"name"</span>: <span class="string">"平安银行"</span>,
+            <span class="property">"price"</span>: <span class="number">11.53</span>,
+            <span class="property">"change_pct"</span>: -<span class="number">0.0086</span>
+        }
+        <span class="comment">// ... more stocks</span>
+    },
+    <span class="property">"donation"</span>: { <span class="comment">/* ... */</span> }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GET /market -->
+                <div class="endpoint-card" id="market">
+                    <div class="endpoint-header">
+                        <span class="method-badge get">GET</span>
+                        <span class="endpoint-path">/market</span>
+                        <span class="endpoint-desc-cn">大盘指数 · <span class="en">Major Indices Snapshot</span></span>
+                    </div>
+                    <div class="endpoint-body">
+                        <div class="desc">
+                            获取主要指数的实时快照：上证指数、深证成指、创业板指、科创板指。<br>
+                            <span class="en">Get a real-time snapshot of major Chinese indices: Shanghai Composite, SZSE Component, ChiNext, STAR 50.</span>
+                        </div>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="label">Example · 示例</span>
+                            </div>
+                            <pre>curl https://ashare.binglewu.workers.dev/market</pre>
+                        </div>
+                        <div class="response-preview">
+                            <div class="resp-header">
+                                <span class="status-dot"></span>
+                                <span class="resp-label">Response</span>
+                                <span class="resp-status">200 OK</span>
+                            </div>
+                            <pre>{
+    <span class="property">"status"</span>: <span class="string">"ok"</span>,
+    <span class="property">"data"</span>: {
+        <span class="property">"sh000001"</span>: {
+            <span class="property">"code"</span>: <span class="string">"sh000001"</span>,
+            <span class="property">"name"</span>: <span class="string">"上证指数"</span>,
+            <span class="property">"price"</span>: <span class="number">3276.73</span>,
+            <span class="property">"change_pct"</span>: <span class="number">0.0021</span>
+        },
+        <span class="property">"sz399001"</span>: {
+            <span class="property">"code"</span>: <span class="string">"sz399001"</span>,
+            <span class="property">"name"</span>: <span class="string">"深证成指"</span>,
+            <span class="property">"price"</span>: <span class="number">10459.14</span>,
+            <span class="property">"change_pct"</span>: <span class="number">0.0035</span>
+        },
+        <span class="property">"sz399006"</span>: {
+            <span class="property">"code"</span>: <span class="string">"sz399006"</span>,
+            <span class="property">"name"</span>: <span class="string">"创业板指"</span>,
+            <span class="property">"price"</span>: <span class="number">1912.45</span>,
+            <span class="property">"change_pct"</span>: <span class="number">0.0052</span>
+        },
+        <span class="property">"sh000688"</span>: {
+            <span class="property">"code"</span>: <span class="string">"sh000688"</span>,
+            <span class="property">"name"</span>: <span class="string">"科创板指"</span>,
+            <span class="property">"price"</span>: <span class="number">967.32</span>,
+            <span class="property">"change_pct"</span>: -<span class="number">0.0012</span>
+        }
+    },
+    <span class="property">"donation"</span>: { <span class="comment">/* ... */</span> }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GET /search -->
+                <div class="endpoint-card" id="search">
+                    <div class="endpoint-header">
+                        <span class="method-badge get">GET</span>
+                        <span class="endpoint-path">/search?q=</span>
+                        <span class="endpoint-desc-cn">股票搜索 · <span class="en">Stock Search</span></span>
+                    </div>
+                    <div class="endpoint-body">
+                        <div class="desc">
+                            按股票代码或名称搜索股票。支持中文名称或代码片段搜索。<br>
+                            <span class="en">Search stocks by code or name. Supports Chinese name search and partial code matching.</span>
+                        </div>
+                        <table class="param-table">
+                            <thead>
+                                <tr>
+                                    <th>参数</th>
+                                    <th>类型</th>
+                                    <th>必填</th>
+                                    <th>说明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="param-name">q</td>
+                                    <td class="param-type">string</td>
+                                    <td><span class="param-required">Required</span></td>
+                                    <td class="param-desc">搜索关键词。可以是股票代码（如 <code>600519</code>）或股票名称（如 <code>茅台</code>、<code>平安</code>）</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="label">Example · 示例</span>
+                            </div>
+                            <pre>curl "https://ashare.binglewu.workers.dev/search?q=%E8%8C%85%E5%8F%B0"
+
+<span class="comment"># 也可以直接搜索代码 / Or search by code</span>
+curl "https://ashare.binglewu.workers.dev/search?q=600519"</pre>
+                        </div>
+                        <div class="response-preview">
+                            <div class="resp-header">
+                                <span class="status-dot"></span>
+                                <span class="resp-label">Response</span>
+                                <span class="resp-status">200 OK</span>
+                            </div>
+                            <pre>{
+    <span class="property">"status"</span>: <span class="string">"ok"</span>,
+    <span class="property">"count"</span>: <span class="number">5</span>,
+    <span class="property">"data"</span>: [
+        {
+            <span class="property">"代码</span>": <span class="string">"600519"</span>,
+            <span class="property">"名称</span>": <span class="string">"贵州茅台"</span>,
+            <span class="property">"最新价</span>": <span class="number">1372.99</span>,
+            <span class="property">"涨跌幅</span>": <span class="number">0.14</span>,
+            <span class="property">"涨跌额</span>": <span class="number">1.99</span>,
+            <span class="property">"成交量</span>": <span class="number">2845671</span>,
+            <span class="property">"成交额</span>": <span class="number">3912345678.0</span>,
+            <span class="property">"换手率</span>": <span class="number">0.23</span>
+        }
+        <span class="comment">// ... more results</span>
+    ],
+    <span class="property">"donation</span>": { <span class="comment">/* ... */</span> }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. Response Format -->
+            <section id="response-format">
+                <div class="section-header">
+                    <h2>📋 响应格式 <span class="en-sub">· Response Format</span></h2>
+                    <p>所有端点返回统一的 JSON 响应结构，并在 HTTP 响应头中包含打赏信息。</p>
+                </div>
+
+                <div class="endpoint-card">
+                    <div class="endpoint-body">
+                        <h4 style="margin-bottom: 12px; font-size: 15px; font-weight: 600;">JSON Body 结构 · JSON Response Structure</h4>
+                        <table class="param-table">
+                            <thead>
+                                <tr>
+                                    <th>字段</th>
+                                    <th>类型</th>
+                                    <th>说明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="param-name">status</td>
+                                    <td class="param-type">string</td>
+                                    <td class="param-desc">
+                                        <code>"ok"</code> 或 <code>"error"</code>
+                                        <br><span class="en">Request status indicator</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="param-name">data</td>
+                                    <td class="param-type">object|array</td>
+                                    <td class="param-desc">
+                                        具体的响应数据，根据端点不同而变化
+                                        <br><span class="en">The actual response payload, varies by endpoint</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="param-name">count</td>
+                                    <td class="param-type">number</td>
+                                    <td class="param-desc">
+                                        返回的记录数（仅 /history 和 /search 端点）
+                                        <br><span class="en">Number of records returned (only /history and /search)</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="param-name">error</td>
+                                    <td class="param-type">string</td>
+                                    <td class="param-desc">
+                                        错误详情（仅在 status 为 "error" 时出现）
+                                        <br><span class="en">Error details (only when status is "error")</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="param-name">donation</td>
+                                    <td class="param-type">object</td>
+                                    <td class="param-desc">
+                                        打赏地址信息
+                                        <br><span class="en">Donation address information</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="endpoint-card">
+                    <div class="endpoint-body">
+                        <h4 style="margin-bottom: 12px; font-size: 15px; font-weight: 600;">HTTP 响应头 · Response Headers</h4>
+                        <table class="param-table">
+                            <thead>
+                                <tr>
+                                    <th>Header</th>
+                                    <th>值</th>
+                                    <th>说明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="param-name"><code>X-Donation-Address</code></td>
+                                    <td class="param-type">string</td>
+                                    <td class="param-desc">
+                                        BSC 钱包地址
+                                        <br><span class="en">BSC wallet address for donations</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="param-name"><code>X-Donation-Network</code></td>
+                                    <td class="param-type">string</td>
+                                    <td class="param-desc">
+                                        网络类型：BSC (BEP-20)
+                                        <br><span class="en">Donation network</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="param-name"><code>X-Powered-By</code></td>
+                                    <td class="param-type">string</td>
+                                    <td class="param-desc">
+                                        Hermes Agent + binglewu
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. Error Handling -->
+            <section id="errors">
+                <div class="section-header">
+                    <h2>⚠️ 错误处理 <span class="en-sub">· Error Handling</span></h2>
+                </div>
+
+                <div class="endpoint-card">
+                    <div class="endpoint-body">
+                        <div class="desc">
+                            当请求失败时，API 会返回带有 <code>status: "error"</code> 的 JSON 响应。常见错误原因：
+                            <br>
+                            <span class="en">When a request fails, the API returns a JSON response with <code>status: "error"</code>. Common error causes:</span>
+                        </div>
+                        <table class="param-table">
+                            <thead>
+                                <tr>
+                                    <th>场景</th>
+                                    <th>HTTP 状态码</th>
+                                    <th>响应</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>无效股票代码</td>
+                                    <td><code>200</code></td>
+                                    <td><code>{"status": "error", "error": "parse_failed", ...}</code></td>
+                                </tr>
+                                <tr>
+                                    <td>缺少必要参数</td>
+                                    <td><code>400</code></td>
+                                    <td><code>{"detail": "Provide 'codes' in JSON body or query params"}</code></td>
+                                </tr>
+                                <tr>
+                                    <td>数据源超时</td>
+                                    <td><code>200</code></td>
+                                    <td><code>{"status": "error", "error": "timeout error", ...}</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. Usage Examples -->
+            <section id="usage-examples">
+                <div class="section-header">
+                    <h2>💻 使用示例 <span class="en-sub">· Usage Examples</span></h2>
+                    <p>多种编程语言的调用示例，助您快速集成。</p>
+                </div>
+
+                <div class="endpoint-card">
+                    <div class="endpoint-body">
+                        <div class="example-tabs" role="tablist">
+                            <button class="example-tab active" data-tab="tab-python">Python</button>
+                            <button class="example-tab" data-tab="tab-javascript">JavaScript</button>
+                            <button class="example-tab" data-tab="tab-curl">cURL</button>
+                            <button class="example-tab" data-tab="tab-rust">Rust</button>
+                        </div>
+
+                        <div class="example-content active" id="tab-python">
+                            <div class="code-block" style="border-top-left-radius: 0; border-top-right-radius: 0; border-top: none;">
+                                <div class="code-header">
+                                    <span class="label">Python · requests</span>
+                                </div>
+                                <pre><span class="keyword">import</span> requests
+
+BASE_URL = <span class="string">"https://ashare.binglewu.workers.dev"</span>
+
+<span class="comment"># 实时行情 · Real-time quote</span>
+resp = requests.get(<span class="string">f"{BASE_URL}/quote/600519"</span>)
+data = resp.json()
+<span class="builtin">print</span>(<span class="string">f"茅台股价: {data['data']['price']} 元"</span>)
+
+<span class="comment"># 历史数据 · Historical data</span>
+resp = requests.get(
+    <span class="string">f"{BASE_URL}/history/000001"</span>,
+    params={<span class="string">"start"</span>: <span class="string">"20250101"</span>, <span class="string">"adjust"</span>: <span class="string">"qfq"</span>}
+)
+records = resp.json()[<span class="string">"data"</span>]
+<span class="builtin">print</span>(<span class="string">f"共 {len(records)} 条记录"</span>)
+
+<span class="comment"># 批量查询 · Batch query</span>
+resp = requests.post(
+    <span class="string">f"{BASE_URL}/batch"</span>,
+    json={<span class="string">"codes"</span>: [<span class="string">"600519"</span>, <span class="string">"000001"</span>, <span class="string">"300750"</span>]}
+)
+<span class="builtin">print</span>(resp.json()[<span class="string">"data"</span>])</pre>
+                            </div>
+                        </div>
+
+                        <div class="example-content" id="tab-javascript">
+                            <div class="code-block" style="border-top-left-radius: 0; border-top-right-radius: 0; border-top: none;">
+                                <div class="code-header">
+                                    <span class="label">JavaScript · fetch</span>
+                                </div>
+                                <pre><span class="keyword">const</span> BASE_URL = <span class="string">"https://ashare.binglewu.workers.dev"</span>;
+
+<span class="comment">// 实时行情 · Real-time quote</span>
+<span class="keyword">const</span> quote = await fetch(<span class="string">`${BASE_URL}/quote/600519`</span>).then(<span class="function">r</span> => r.json());
+<span class="builtin">console</span>.log(<span class="string">`茅台股价: ${quote.data.price} 元`</span>);
+
+<span class="comment">// 历史数据 · Historical data</span>
+<span class="keyword">const</span> history = await fetch(
+    <span class="string">`${BASE_URL}/history/000001?start=20250101&adjust=qfq`</span>
+).then(<span class="function">r</span> => r.json());
+<span class="builtin">console</span>.log(<span class="string">`共 ${history.count} 条记录`</span>);
+
+<span class="comment">// 批量查询 · Batch query</span>
+<span class="keyword">const</span> batch = await fetch(<span class="string">`${BASE_URL}/batch`</span>, {
+    method: <span class="string">"POST"</span>,
+    headers: { <span class="string">"Content-Type"</span>: <span class="string">"application/json"</span> },
+    body: JSON.stringify({ <span class="property">codes</span>: [<span class="string">"600519"</span>, <span class="string">"000001"</span>] })
+}).then(<span class="function">r</span> => r.json());
+<span class="builtin">console</span>.log(batch.data);</pre>
+                            </div>
+                        </div>
+
+                        <div class="example-content" id="tab-curl">
+                            <div class="code-block" style="border-top-left-radius: 0; border-top-right-radius: 0; border-top: none;">
+                                <div class="code-header">
+                                    <span class="label">cURL</span>
+                                </div>
+                                <pre><span class="comment"># 实时行情</span>
+curl https://ashare.binglewu.workers.dev/quote/600519
+
+<span class="comment"># 历史数据（前复权）</span>
+curl "https://ashare.binglewu.workers.dev/history/000001?start=20250101&adjust=qfq"
+
+<span class="comment"># 批量查询</span>
+curl -X POST https://ashare.binglewu.workers.dev/batch \
+  -H "Content-Type: application/json" \
+  -d '{"codes": ["600519", "000001", "300750"]}'
+
+<span class="comment"># 大盘指数</span>
+curl https://ashare.binglewu.workers.dev/market
+
+<span class="comment"># 搜索</span>
+curl "https://ashare.binglewu.workers.dev/search?q=%E8%8C%85%E5%8F%B0"</pre>
+                            </div>
+                        </div>
+
+                        <div class="example-content" id="tab-rust">
+                            <div class="code-block" style="border-top-left-radius: 0; border-top-right-radius: 0; border-top: none;">
+                                <div class="code-header">
+                                    <span class="label">Rust · reqwest</span>
+                                </div>
+                                <pre><span class="keyword">use</span> reqwest::Client;
+<span class="keyword">use</span> serde_json::Value;
+
+<span class="keyword">async fn</span> <span class="function">get_quote</span>() -> Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    <span class="keyword">let</span> client = Client::new();
+
+    <span class="comment">// 实时行情 · Real-time quote</span>
+    <span class="keyword">let</span> resp: Value = client
+        .get(<span class="string">"https://ashare.binglewu.workers.dev/quote/600519"</span>)
+        .send().await?
+        .json().await?;
+    <span class="builtin">println!</span>(<span class="string">"茅台股价: {}"</span>, resp[<span class="string">"data"</span>][<span class="string">"price"</span>]);
+
+    <span class="comment">// 批量查询 · Batch query</span>
+    <span class="keyword">let</span> batch: Value = client
+        .post(<span class="string">"https://ashare.binglewu.workers.dev/batch"</span>)
+        .json(&amp;serde_json::json!({
+            <span class="string">"codes"</span>: [<span class="string">"600519"</span>, <span class="string">"000001"</span>]
+        }))
+        .send().await?
+        .json().await?;
+    <span class="builtin">println!</span>(<span class="string">"{:#?}"</span>, batch[<span class="string">"data"</span>]);
+
+    Ok(())
+}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 8. Donation -->
+            <section id="donation">
+                <div class="section-header">
+                    <h2>❤️ 打赏支持 <span class="en-sub">· Support the Project</span></h2>
+                    <p>如果您觉得这个 API 对您有帮助，欢迎打赏支持！您的支持让服务器持续运行，数据持续流动 🚀</p>
+                </div>
+                <div class="donation-box">
+                    <h3>☕ 请作者喝杯咖啡</h3>
+                    <div class="en-sub">Buy the author a coffee · Support Open Source</div>
+
+                    <div style="margin: 24px 0;">
+                        <div class="donation-address" onclick="copyAddress(this)">
+                            <code>0x19979a2498867a1bC0F823Fd309B05eEe8Bc5624</code>
+                            <span class="network-badge">BSC BEP-20</span>
+                            <span style="font-size: 12px; color: var(--text-tertiary); margin-left: 4px;">📋 点击复制</span>
+                        </div>
+                    </div>
+
+                    <table class="param-table" style="max-width: 480px; margin: 0 auto;">
+                        <thead>
+                            <tr>
+                                <th>Network</th>
+                                <th>Address / 地址</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>BSC (BEP-20)</strong></td>
+                                <td style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">0x19979a2498867a1bC0F823Fd309B05eEe8Bc5624</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="donation-note">
+                        ⚠️ 仅支持 BSC (BEP-20) 网络。请勿向其他网络发送资产，以免造成损失。<br>
+                        <span class="en">⚠️ Only BSC (BEP-20) network is supported. Do NOT send assets on other networks.</span>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="copyright">
+                Built with ❤️ by <a href="https://github.com/wubingle-crypto" style="color: var(--text-secondary); text-decoration: none;">binglewu</a>
+            </div>
+            <div class="links">
+                <a href="https://github.com/wubingle-crypto/ashare-api">GitHub</a>
+                <a href="https://github.com/wubingle-crypto/ashare-quant-toolkit">Quant Toolkit</a>
+                <a href="https://github.com/wubingle-crypto/bwh-hermes-agent">Hermes Agent</a>
+            </div>
+        </footer>
+    </main>
+</div>
+
+<script>
+    // ─── Sidebar Navigation Active State ───
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
+            // Close mobile sidebar
+            document.getElementById('sidebar').classList.remove('open');
+        });
+    });
+
+    // ─── Mobile Nav Toggle ───
+    document.getElementById('mobileNavToggle').addEventListener('click', function() {
+        document.getElementById('sidebar').classList.toggle('open');
+    });
+
+    // ─── Example Tabs ───
+    document.querySelectorAll('.example-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            const parent = this.closest('.endpoint-body');
+            parent.querySelectorAll('.example-tab').forEach(t => t.classList.remove('active'));
+            parent.querySelectorAll('.example-content').forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            document.getElementById(this.dataset.tab).classList.add('active');
+        });
+    });
+
+    // ─── Copy Address ───
+    function copyAddress(el) {
+        const text = el.querySelector('code').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            const label = el.querySelector('span:last-child');
+            const original = label.textContent;
+            label.textContent = '✅ 已复制 / Copied!';
+            setTimeout(() => { label.textContent = original; }, 2000);
+        }).catch(() => {
+            // Fallback
+            const range = document.createRange();
+            range.selectNode(el.querySelector('code'));
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            document.execCommand('copy');
+        });
+    }
+
+    // ─── Active Nav on Scroll ───
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    function updateActiveNav() {
+        let current = '';
+        sections.forEach(section => {
+            const top = section.offsetTop - 120;
+            if (window.scrollY >= top) {
+                current = section.getAttribute('id');
+            }
+        });
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + current) {
+                link.classList.add('active');
+            }
+        });
+    }
+
+    window.addEventListener('scroll', updateActiveNav);
+    updateActiveNav();
+
+    // ─── Smooth scroll for anchor links ───
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+</script>
+</body>
+</html>
